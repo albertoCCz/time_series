@@ -175,6 +175,7 @@ figure('Position', pos)
 plot(t,wx_f,'b')
 hold on
 plot(t,-1*mwx_a,'r',t,mwx_a,'r','Linewidth',1.5)
+hold off
 legend('wx_f','\pm mwx_f (envelope)')
 xlabel('time [s]','Interpreter','latex')
 ylabel('signals [$\mu m/s$]','Interpreter','latex')
@@ -364,7 +365,8 @@ mted_fa = mted_fa(abs(lag)+1:end);
 figure('Position', pos)
 plot(tdd,ted_f,'b')
 hold on
-plot(tdd(1:end-abs(lag)),-mted_fa+mted,'r',tdd(1:end-abs(lag)),mted_fa+mted,'r','Linewidth',1)
+plot(tdd(1:end-abs(lag)),-mted_fa+mted,'r','Linewidth',1,...
+     tdd(1:end-abs(lag)), mted_fa+mted,'r','Linewidth',1)
 legend('ted','\pmmted_{fa} (envelope)')
 xlabel('Time [day]')
 ylabel('Temperature [\circC]')
@@ -381,12 +383,38 @@ plot(f,TED_F,'b')
 xlabel('Frequency [cicles/day]')
 ylabel('TED_F')
 title('Fourier Transform of the temperature fluctuations in Granada')
+xlim([0 5.2])
 
 % 2.7 Predicción lineal de la temperatura con un modelo autorregresivo y
 % representar el error de predicción
 % ----------------------------------------------------------------------
+% Calculamos los coeficientes del modelo autorregresivo
+a = lpc(te,20);  % probamos predictor con 20 coeficientes
 
+% Realizamos la predicción
+te_est = filter([0 -a(2:end)],1,te);
 
+% Calculamos el error de predicción
+te_est_err = te-te_est;  % Error=diferencia entre señal real y estimada
+
+% Representamos la temperatura, la temperatura estimada y el error de
+% predicción en la misma figura
+figure('Position',[100 100 900 500])
+subplot(4,1,1:3)
+plot(td,te,'b')
+hold on
+plot(td,te_est,'Color',[0.8500 0.3250 0.0980])
+hold off
+legend('te','te_{est}')
+ylabel('te | te_{est} [\circC]')
+title('Temperature, its predicted value and the prediction error')
+xlim([60 70])
+
+subplot(4,1,4)
+plot(td,te_est_err,'g')
+xlabel('Time [day]')
+ylabel('te_{est_ err} [\circC]')
+xlim([60 70])
 
 %%
 close all
