@@ -3,7 +3,7 @@
 % Meteorología. Curso 2021-22.
 % ----------------------------
 % Autor: Calzada Chávez, Alberto.
-% Email: albertocalzada95@correo.ugr.es
+% Email: alcalzada95@correo.ugr.es
 % ===========================================================
 
 %% Ejercicio 2: Análisis de la señal meteorológica
@@ -17,7 +17,7 @@ pos = [200 200 900 300];
 load meteo1.mat;
 
 % Definimos vector de tiempo tipo string
-ts = datestr(ti+td); % en días
+td_str = datestr(td+ti);
 
 % Calculamos el intervalo de muestreo
 dt = td(2)-td(1);
@@ -73,8 +73,10 @@ fny = 1/dtd/2;
 %figure
 %freqz(b,a,500,1/dtd)
 
-% Aplicamos el filtro y le sumamos la media
+% Aplicamos el filtro y le sumamos la media a la señal filtrada y a la
+% original
 ted_f = filter(b,a,ted)+mted;
+ted = ted+mted;
 
 % Representamos la señal filtrada
 figure('Position',pos)
@@ -88,8 +90,8 @@ title('Temperature in Granada after seasonal detrending')
 %  diaria
 % ----------------------------------------------------------------------
 % Calculamos y restamos la media
-mted_f = mean(ted_f);
-ted_ff = ted_f-mted_f;
+mted = mean(ted);
+ted = ted-mted;
 
 % Definimos un filtro tipo Butterworth para eliminar fluctuación diaria
 % Queremos filtrar, por ejemplo, frecuencias por encima de 1 ciclo/semana.
@@ -102,33 +104,39 @@ fny = 1/dtd/2;
 %figure
 %freqz(b,a,500,1/dtd)
 
-% Aplicamos el filtro y le sumamos la media
-ted_ff = filter(b,a,ted_ff)+mted_f;
+% Aplicamos el filtro y le sumamos la media a la señal filtrada y a la
+% original
+ted_ff = filter(b,a,ted)+mted;
+ted = ted+mted;
 
 % Representamos la señal filtrada
 figure('Position',pos)
 plot(tdd,ted_ff)
-ylim([-10 40])
+%ylim([-10 40])
 xlabel('Time [day]')
 ylabel('Temperature [\circC]')
-title('Temperature in Granada after seasonal and daily detreding')
+title('Seasonal temperature trend in Granada')
 
 %% 2.5 Envolvente de la fluctuación diaria de la temperatura
 % ----------------------------------------------------------
+% Calculamos y restamos la media
+mted = mean(ted);
+ted = ted-mted;
+
 % Creamos un filtro opuesto al del apartado anterior
 fc = 1/7;
 fny = 1/dtd/2;
-[b,a] = butter(8,fc/fny,'high');
+[b,a] = butter(6,fc/fny,'high');
 
 % Representamos la respuesta en frecuencia del filtro
 %figure
 %freqz(b,a,500,1/dtd)
 
 % Aplicamos el filtro y sumamos la media
-ted_f = filter(b,a,ted);
+ted_f = filter(b,a,ted);   % ted ya tiene su media restada
 
 % Calculamos la señal analítica
-ted_fa = hilbert(ted_f);   % Volvemos a utilizar la señal no diezmada
+ted_fa = hilbert(ted_f);
 
 % Calculamos su envolvente
 mted_fa = abs(ted_fa);
@@ -138,17 +146,18 @@ ted_f = ted_f+mted;
 
 % SUAVIZADO OPCIONAL ------
 % =========================
-quiere_suavizar = 1;
+quiere_suavizar = 0; % 1 si queremos suavizar la envolvente; 0 si no queremos.  
 if quiere_suavizar
     % Suavizamos la envolvente con filtro butter (no altera la potencia de
-    % la señal en la banda de paso)
-    fc_s = 1/2;     % filtramos frecuencias mayores de 1ciclo/2días=0.5ciclos/día
+    % la señal en la banda de paso). Filtramos frecuencias mayores de
+    % 1ciclo/1.5días = 0.667ciclos/día
+    fc_s = 1/1.5;
     fny = 1/dtd/2;
     [b,a] = butter(4,fc_s/fny,'low');
 
     % Aplicamos el filtro butter
     mted_fa = filter(b,a,mted_fa);
-
+    
     % Estudiamos la correlación entre la fluctuación diaria y su envolvente
     % para corregir el desfase introducido por el filtro
     [cc,lags] = xcorr(ted_f,mted_fa);
@@ -166,7 +175,11 @@ if quiere_suavizar
     title('Cross-correlation of ted_f and mted_{fa}')
 
     % Corregimos el lag de la envolvente
-    mted_fa = mted_fa(abs(lag)+1:end);
+    if lag>0 % si la envolvente suavizada se retrasa
+        mted_fa = mted_fa(1+abs(lag):end);
+    else     % si la envolvente suavizada se adelanta
+        mted_fa = mted_fa(1:end-abs(lag));
+    end
     
     % Definimos el vector de tiempo para la señal filtrada como
     tdd_f = tdd(1:end-abs(lag));
@@ -177,12 +190,14 @@ end
 % =========================
 
 % Representamos la señal filtrada junto con su envolvente (sumando la
-% media de ted, es decir, sumando mted) corrigiendo el lag
+% media de ted, es decir, sumando mted)
 figure('Position', pos)
 plot(tdd,ted_f,'b')
 hold on
 plot(tdd_f,-mted_fa+mted,'r','Linewidth',1)
 plot(tdd_f, mted_fa+mted,'r','Linewidth',1)
+hold off
+ylim([-10 40])
 legend('ted','\pmmted_{fa} (envelope)')
 xlabel('Time [day]')
 ylabel('Temperature [\circC]')
@@ -198,14 +213,14 @@ figure('Position',pos)
 plot(f,TED_F,'b')
 xlabel('Frequency [cicles/day]')
 ylabel('TED_F')
-title('Fourier Transform of the temperature fluctuations in Granada')
+title('Fourier Transform of the daily temperature fluctuations in Granada')
 xlim([0 5.2])
 
 %% 2.7 Predicción lineal de la temperatura con un modelo autorregresivo y
 %  representar el error de predicción
 % -----------------------------------------------------------------------
 % Calculamos los coeficientes del modelo autorregresivo
-a = lpc(te,20);  % probamos predictor con 20 coeficientes
+[a,g] = lpc(te,20);  % probamos predictor con 20 coeficientes
 
 % Realizamos la predicción
 te_est = filter([0 -a(2:end)],1,te);
@@ -230,7 +245,11 @@ subplot(4,1,4)
 plot(td,te_est_err,'g')
 xlabel('Time [day]')
 ylabel('te_{est_ err} [\circC]')
+legend_str_1 = sprintf('Mean error = %.4f', mean(te_est_err));
+legend_str_2 = sprintf(' Error variance = %.4f', g);
+legend(strcat(legend_str, ' [\circC] | ', legend_str_2, ' [\circC]'))
 xlim([60 70])
+ylim([-10 15])
 
 %% Cerramos todas las figuras
 close all

@@ -3,7 +3,7 @@
 % Meteorología. Curso 2021-22.
 % ----------------------------
 % Autor: Calzada Chávez, Alberto.
-% Email: albertocalzada95@correo.ugr.es
+% Email: alcalzada95@correo.ugr.es
 % ===========================================================
 
 % Ejercicio 1: Análisis de señales sísmicas
@@ -35,7 +35,7 @@ xlim([0 10])
 
 % Representamos yr
 figure('Position', pos)
-plot(ty,yr,'r')
+plot(ty,yr,'Color',[1 0.745 0.039])
 xlabel('Time [s]')
 ylabel('yr')
 title('yr signal')
@@ -50,18 +50,18 @@ title('yr signal')
 mXW = abs(XW);
 
 % Representamos el módulo de XW en función de la frecuencia
-figure
+figure('Position',[200 200 600 300])
 plot(f,mXW,'b')
 xlim([0 100])
 xlabel('Frequency [Hz]')
 ylabel('abs(XW)')
-title('Module of the F.T. of wx')
+title('Module of the F.T. of xw')
 
 %% 1.1.3 Representación del espectrograma de xw:
 % ----------------------------------------------
 % Representamos el espectrograma
 figure('Position',[200 200 800 400]);
-spectrogram(xw,1024,900,1024,1/dt,'yaxis');  % delta(f)=1/dt/1024=0.98Hz
+spectrogram(xw,1024,900,1024,1/dt,'yaxis');  % $\Delta f=\sfrac{1}{1024dt}=0.98Hz$
 cb = colorbar;
 ylabel(cb,'Power/Frequency [dB/Hz]')
 title('xw spectrogram')
@@ -102,7 +102,7 @@ load japon.mat;
 
 % Convertimos el número de cuentas a velocidad del suelo
 f_conv = 1500;
-wx = wx/f_conv;   % 10^(-6)m/s
+wx = wx/f_conv;   % $\mu m/s$
 
 % Convertimos minutos a segundos
 t = t*60;
@@ -134,8 +134,8 @@ xlim([0,0.0012])
 
 % Estimación periodos (y frecuencias asociadas) de ondas superficiales
 % a partir de la figura de wx:
-% Periodo 1: 1.534e5 - 1.510e5 -> T = 2.4e3 [s] -> f = 4.1667-4 [Hz]
-% Periodo 2: 1.818e5 - 1.806e5 -> T = 1.2e3 [s] -> f = 8.3333-4 [Hz]
+% Periodo 1: $t_2-t_1=1.534*10^5 - 1.510*10^5$ -> $T_1 = 2.4*10^3\;s$ -> $f_1 = 4.1667*10^{-4}\;Hz$
+% Periodo 2: $t_2-t_1=1.818*10^5 - 1.806*10^5$ -> $T_2 = 1.2*10^3\;s$ -> $f_2 = 8.3333*10^{-4}\;Hz$
 
 % Frecuencia de corte estimada a partir del periodo estimado
 fc = 0.0005;     % frecuencia de corte
@@ -146,7 +146,7 @@ fny = 1/dt/2;    % frecuencia de Nyquist (=fs/2)
 % Tenemos que coger un filtro de mayor longitud, por ejemplo de 3e3 puntos.
 % ----
 % Un periodo de la frecuencia de corte corresponde a un periodo
-% de 1/0.0009 s = 1.1111e3 s, lo que corresponde a 2e4/dt = 0.9259e3 puntos.
+% de 1/0.0009 s = 1.1111e3 s, lo que corresponde a 1.1111e3/dt = 0.9259e3 puntos.
 % Tenemos que coger un filtro de mayor longitud, por ejemplo de 2e3 puntos.
 l_filtro = 3e3;
 
